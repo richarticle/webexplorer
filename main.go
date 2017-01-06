@@ -15,18 +15,28 @@ import (
 // Directory is the root directory for accessing files
 var Directory string
 
-func main() {
+var https = flag.Bool("https", false, "enable https")
+var cert = flag.String("cert", "server.crt", "https cert file")
+var key = flag.String("key", "server.key", "https key file")
+var port = flag.String("p", "8080", "Port Number")
+var dir = flag.String("d", "./", "Root Directory")
 
-	port := flag.String("p", "8080", "Port Number")
-	dir := flag.String("d", "./", "Root Directory")
+func main() {
+	var err error
+
 	flag.Parse()
 
 	Directory = *dir
 
-	fmt.Println("Serving HTTP on 0.0.0.0 port", *port, "dir", Directory, "...")
+	fmt.Println("Serving HTTP on 0.0.0.0 port", *port, "dir", *dir, "...")
 
 	http.HandleFunc("/", Handler)
-	err := http.ListenAndServe(":"+*port, nil)
+
+	if *https {
+		err = http.ListenAndServeTLS(":"+*port, *cert, *key, nil)
+	} else {
+		err = http.ListenAndServe(":"+*port, nil)
+	}
 	if err != nil {
 		fmt.Println("ListenAndServe: ", err)
 	}
@@ -34,7 +44,7 @@ func main() {
 
 // ShowAccessLog prints access logs
 func ShowAccessLog(req *http.Request, statusCode int) {
-	const layout = "[ 2/Jan/2006 15:04:05 ]"
+	const layout = "[ 2006-01-02 15:04:05 ]"
 	fmt.Printf("%s %-4s %d %s\n", time.Now().Format(layout), req.Method, statusCode, req.URL.Path)
 }
 
